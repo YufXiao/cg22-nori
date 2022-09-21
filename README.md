@@ -1,1 +1,1 @@
-# cg22-nori
+# FS22 computer graphics
