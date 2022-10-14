@@ -39,13 +39,50 @@ public:
 
     virtual bool rayIntersect(uint32_t index, const Ray3f &ray, float &u, float &v, float &t) const override {
 
-	/* to be implemented */
+        auto r = m_radius;
+        auto Center = m_position;
+        auto Original = ray.o;
+        auto Direction = ray.d;
+
+        // coefficients
+        auto x = Direction.squaredNorm();
+        auto y = 2 * (Original - Center).dot(Direction);
+        auto z = (Original - Center).squaredNorm() - pow(r, 2);
+
+        auto discriminat = pow(y, 2) - 4 * x * z;
+
+        if (discriminat <= 0) {
+            return false;
+        }
+
+        auto t1 = (-y - sqrt(discriminat)) / (2 * x);
+        auto t2 = (-y + sqrt(discriminat)) / (2 * x);
+
+        if (t1 >= ray.mint && t1 <= ray.maxt) {
+            t = t1;
+            return true;
+        }
+
+        if (t2 >= ray.mint && t2 <= ray.maxt) {
+            t = t2;
+            return true;
+        }
+
         return false;
 
     }
 
     virtual void setHitInformation(uint32_t index, const Ray3f &ray, Intersection & its) const override {
-        /* to be implemented */
+        // intersection point
+        its.p = ray.o + its.t * ray.d;
+
+        auto normal = (its.p - m_position).normalized();
+        its.shFrame = its.geoFrame = Frame(normal);
+
+        auto coordinates = sphericalCoordinates(normal);
+        coordinates.x() /=  1.f * M_PI;
+        coordinates.y() /= 2.f * M_PI;
+        its.uv = coordinates;   
     }
 
     virtual void sampleSurface(ShapeQueryRecord & sRec, const Point2f & sample) const override {
