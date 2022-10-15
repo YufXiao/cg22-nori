@@ -37,11 +37,11 @@ protected:
 
 template <>
 ConstantTexture<float>::ConstantTexture(const PropertyList &props) {
-    m_value = props.getFloat("value",0.f);
+    m_value = props.getFloat("value", 0.f);
 }
 template <>
 ConstantTexture<Color3f>::ConstantTexture(const PropertyList &props) {
-    m_value = props.getColor("value",Color3f(0.f));
+    m_value = props.getColor("value", Color3f(0.f));
 }
 
 

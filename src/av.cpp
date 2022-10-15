@@ -31,9 +31,8 @@ public:
 	std::string toString() const {
 		return "AvIntegrator[]";
 	}
-
-private:
-	float m_length;
+	protected:
+	 float m_length;
 };
 
 NORI_REGISTER_CLASS(AvIntegrator, "av");

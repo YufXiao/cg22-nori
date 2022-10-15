@@ -6,7 +6,7 @@
 
 	<!-- Use the average visibility integrator -->
 	<integrator type="av">
-		<float name="length" value="0.5"/>
+		<float name="length" value="3"/>
 	</integrator>
 
 	<!-- Render the scene as viewed by a perspective camera -->

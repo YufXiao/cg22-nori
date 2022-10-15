@@ -27,7 +27,8 @@
         <float name="radius" value="3"/>
         <bsdf type="diffuse">
             <texture type="checkerboard_color" name="albedo">
-								<vector name="scale" value="0.1,0.2"/>
+				<vector name="scale" value="0.1,0.2"/>
+				<point name="delta" value="0.5,0.5"/>
                 <color name="value1" value="0.8,0.8,0.8"/>
                 <color name="value2" value="0.2,0.2,0.2"/>
             </texture>
@@ -39,7 +40,7 @@
 		<string name="filename" value="plane.obj"/>
 
 		<bsdf type="diffuse">
-			<!--<color name="albedo" value="1,1,1"/>-->
+			<color name="albedo" value="1,1,1"/>
 		</bsdf>
 
 		<transform name="toWorld">

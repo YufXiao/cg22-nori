@@ -75,12 +75,11 @@ public:
     virtual void setHitInformation(uint32_t index, const Ray3f &ray, Intersection & its) const override {
         // intersection point
         its.p = ray.o + its.t * ray.d;
-
         auto normal = (its.p - m_position).normalized();
         its.shFrame = its.geoFrame = Frame(normal);
 
         auto coordinates = sphericalCoordinates(normal);
-        coordinates.x() /=  1.f * M_PI;
+        coordinates.x() /= M_PI;
         coordinates.y() /= 2.f * M_PI;
         its.uv = coordinates;   
     }
