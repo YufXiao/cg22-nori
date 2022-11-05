@@ -73,7 +73,7 @@ Vector3f Warp::squareToUniformSphereCap(const Point2f &sample, float cosThetaMax
 }
 
 float Warp::squareToUniformSphereCapPdf(const Vector3f &v, float cosThetaMax) {
-    if (abs(1 - v.norm()) > Epsilon || v.z() > cosThetaMax) {
+    if (abs(1 - v.norm()) > Epsilon || v.z() < cosThetaMax) {
         return 0;
     }
     return INV_TWOPI / (1 - cosThetaMax);
@@ -121,8 +121,8 @@ float Warp::squareToBeckmannPdf(const Vector3f &m, float alpha) {
     if (abs(1 - m.norm()) > Epsilon || m.z() < 0) {
         return 0;
     }
-    auto a2 = pow(alpha, 2);
-    return exp(-pow(tan(theta), 2) / a2) / (M_PI * a2 * pow(cos(theta), 3));
+    auto alfa = pow(alpha, 2);
+    return exp(-pow(tan(theta), 2) / alfa) / (M_PI * alfa * pow(cos(theta), 3));
 }
 
 Vector3f Warp::squareToUniformTriangle(const Point2f &sample) {
