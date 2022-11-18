@@ -15,8 +15,8 @@ public:
         Color3f t(1.f);
 
         Ray3f pathRay = ray;
-        float w_mats = 1.f;
-        float w_ems = 1.f;
+        float w_mat = 1.f;
+        float w_em = 1.f;
 
         Intersection its;
         if (!scene->rayIntersect(pathRay, its))
@@ -26,7 +26,7 @@ public:
             if (its.mesh->isEmitter())
             {
                 EmitterQueryRecord lRec(pathRay.o, its.p, its.shFrame.n);
-                Li += t * w_mats * its.mesh->getEmitter()->eval(lRec);
+                Li += t * w_mat * its.mesh->getEmitter()->eval(lRec);
             }
 
             const Emitter *emitter = scene->getRandomEmitter(sampler->next1D());
@@ -41,8 +41,11 @@ public:
                 Color3f f = its.mesh->getBSDF()->eval(bRec);
                 float pdf_mat = its.mesh->getBSDF()->pdf(bRec);
 
-                w_ems = pdf_mat + pdf_em > 0.f ? pdf_em / (pdf_mat + pdf_em) : pdf_em;
-                Li += LeOverPdf * f * cosTheta * w_ems * t;
+                if (pdf_mat + pdf_em > 0.f) {
+                    w_em = pdf_em / (pdf_mat + pdf_em);
+                }
+                else w_em = pdf_em;
+                Li += LeOverPdf * f * cosTheta * w_em * t;
             }
 
             //Russian roulettio
@@ -66,11 +69,14 @@ public:
             if (its.mesh->isEmitter()) {
                 EmitterQueryRecord lRec = EmitterQueryRecord(origin, its.p, its.shFrame.n);
                 float pdf_em = its.mesh->getEmitter()->pdf(lRec);
-                w_mats = pdf_mat + pdf_em > 0.f ? pdf_mat / (pdf_mat + pdf_em) : pdf_mat;
+                if (pdf_mat + pdf_em > 0.f) {
+                    w_mat = pdf_mat / (pdf_mat + pdf_em);
+                }
+                else w_mat = pdf_mat;
             }
 
             if (bRec.measure == EDiscrete)
-                w_mats = 1.0f;
+                w_mat = 1.0f;
         }
         return Li;
     }
