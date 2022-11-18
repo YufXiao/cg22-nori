@@ -43,7 +43,26 @@ public:
     }
 
     virtual Color3f sample(BSDFQueryRecord &bRec, const Point2f &sample) const override {
-        throw NoriException("Unimplemented!");
+        auto wi = bRec.wi;
+        auto cosTheta = Frame::cosTheta(wi);
+        auto F = fresnel(cosTheta, m_extIOR, m_intIOR);
+
+        if (sample.x() <= F) {
+            bRec.wo = Vector3f(-bRec.wi.x(), -bRec.wi.y(), bRec.wi.z());
+            bRec.eta = 1.f;
+        }
+        else {
+            auto n = Vector3f(0.f, 0.f, 1.f);
+            auto eta = m_extIOR / m_intIOR;
+            if (cosTheta < 0) {
+                n = -n;
+                eta = 1 / eta;
+            }
+            bRec.wo = (-eta * (wi - wi.dot(n) * n) - n * sqrt(1 - pow(eta, 2) * (1 - pow(wi.dot(n), 2)))).normalized();
+            bRec.eta = eta;
+        }
+        bRec.measure = EDiscrete;
+        return 1;
     }
 
     virtual std::string toString() const override {

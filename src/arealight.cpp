@@ -83,7 +83,23 @@ public:
 
 
     virtual Color3f samplePhoton(Ray3f &ray, const Point2f &sample1, const Point2f &sample2) const override {
-        throw NoriException("To implement...");
+        ShapeQueryRecord sRec;
+        m_shape->sampleSurface(sRec, sample1);
+
+        auto pdf = sRec.pdf;
+        auto direction = Frame(sRec.n).toWorld(Warp::squareToCosineHemisphere(sample2));
+        ray = Ray3f(sRec.p, direction);
+
+        if (pdf == 0.f) {
+            return 0.f;
+        }
+
+        auto area = 1.f / pdf;
+
+        EmitterQueryRecord eRec(sRec.p + direction, sRec.p, sRec.n);
+        auto Le = eval(eRec);
+
+        return M_PI * area * Le;
     }
 
 

@@ -52,8 +52,6 @@ public:
 		if (m_photonRadius == 0)
 			m_photonRadius = scene->getBoundingBox().getExtents().norm() / 500.0f;
 
-	
-
 		/* How to add a photon?
 		 * m_photonMap->push_back(Photon(
 		 *	Point3f(0, 0, 0),  // Position
@@ -65,6 +63,43 @@ public:
 		// put your code to trace photons here
 
 		/* Build the photon map */
+		int depositedPhotonsCount = 0;
+		while (depositedPhotonsCount < m_photonCount) {
+
+            m_emittedCount++;
+
+            Ray3f pathRay;
+            Intersection its;
+
+            auto randomEmitter = scene->getRandomEmitter(sampler->next1D());
+            Color3f W = randomEmitter->samplePhoton(pathRay, sampler->next2D(), sampler->next2D()) *
+                     scene->getLights().size();
+
+            while (true) {
+                if (!scene->rayIntersect(pathRay, its)) {
+                    break;
+                }
+
+                if (its.mesh->getBSDF()->isDiffuse()) {
+                    m_photonMap->push_back(Photon(its.p, -pathRay.d, W));
+                    depositedPhotonsCount++;
+                }
+
+                // russian roulette
+                auto p = std::min(W.maxCoeff(), .99f);
+                if (sampler->next1D() > p) {
+                    break;
+                }
+                W /= p;
+
+                BSDFQueryRecord bRec(its.shFrame.toLocal(-pathRay.d));
+                bRec.uv = its.uv;
+                auto bsdfCosThetaOverPdf = its.mesh->getBSDF()->sample(bRec, sampler->next2D());
+                W *= bsdfCosThetaOverPdf;
+
+                pathRay = Ray3f(its.p, its.shFrame.toWorld(bRec.wo));
+            }
+        }
         m_photonMap->build();
     }
 
@@ -86,8 +121,57 @@ public:
 		 */
 
 		// put your code for path tracing with photon gathering here
+        Ray3f pathRay = _ray;
+        Intersection its;
 
-		return Color3f{};
+        Color3f t(1.f);
+        Color3f Li(0.f);
+
+        while (true) {
+
+            if (!scene->rayIntersect(pathRay, its)) {
+                break;
+            }
+
+            if (its.mesh->isEmitter()) {
+                EmitterQueryRecord eRec(pathRay.o, its.p, its.shFrame.n);
+                Li += t * its.mesh->getEmitter()->eval(eRec);
+            }
+
+            if (its.mesh->getBSDF()->isDiffuse()) {
+                Color3f photonDensityEstimation(0);
+                std::vector<uint32_t> results;
+                m_photonMap->search(its.p, m_photonRadius,results);
+                for (auto i : results) {
+                    const Photon &photon = (*m_photonMap)[i];
+                    BSDFQueryRecord bRec(its.shFrame.toLocal(-pathRay.d), its.shFrame.toLocal(photon.getDirection()), ESolidAngle);
+                    bRec.uv = its.uv;
+                    auto fr = its.mesh->getBSDF()->eval(bRec);
+                    photonDensityEstimation += fr * photon.getPower();
+                }
+                photonDensityEstimation /= M_PI * pow(m_photonRadius, 2) * m_emittedCount;
+
+                Li += t * photonDensityEstimation;
+                break;
+            }
+
+            // russian roulette with success probability p
+            auto p = std::min(t.maxCoeff(), .99f);
+            if (sampler->next1D() > p) {
+                break;
+            }
+            t /= p;
+
+
+            // Sample from BSDF
+            BSDFQueryRecord bRec(its.shFrame.toLocal(-pathRay.d));
+            bRec.uv = its.uv;
+            auto bsdfCosThetaOverPdf = its.mesh->getBSDF()->sample(bRec, sampler->next2D());
+            t *= bsdfCosThetaOverPdf;
+
+            pathRay = Ray3f(its.p, its.shFrame.toWorld(bRec.wo));
+        }
+		return Li;
     }
 
     virtual std::string toString() const override {
@@ -106,6 +190,7 @@ private:
      * NOT the number of emitted photons. You will need to keep track of those yourself.
      */ 
     int m_photonCount;
+    int m_emittedCount;
     float m_photonRadius;
     std::unique_ptr<PhotonMap> m_photonMap;
 };
